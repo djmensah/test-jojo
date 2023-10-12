@@ -1,0 +1,31 @@
+
+version: 0.2
+env:
+  variables:
+      BC_SOURCE: "codebuild"
+      PRISMA_API_URL: "https://api.prismacloud.io"
+      PRISMA_ACCESS_KEY: "d464fe2d-d40e-4104-8f0f-7f3679179dfc"
+      PRISMA_SECRET_KEY: "tG1ShwiHMhRDq5VPZMTg545UGvQ="
+#  parameter-store:
+     # BC_API_KEY: "bc-api-key"
+     
+      
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+    commands:
+       - pip3 install checkov
+       - echo Installing codebuild-extras...
+       - curl -fsSL https://raw.githubusercontent.com/bridgecrewio/aws-codebuild-extras/master/install >> extras.sh
+       - . ./extras.sh
+  build:
+    commands:
+       - pip3 uninstall -y aws-sam-cli
+       - checkov -d . --use-enforcement-rules --bc-api-key $PRISMA_ACCESS_KEY::$PRISMA_SECRET_KEY --repo-id $CODEBUILD_ACCOUNT_ID/$CODEBUILD_PROJECT -o cli -o junitxml --output-file-path console,test_results.xml
+reports:
+  prisma-cloud-infrastructure-security:
+    files:
+       - test_results.xml
+    discard-paths: yes
+    file-format: JunitXml
